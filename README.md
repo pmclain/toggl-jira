@@ -1,5 +1,7 @@
 # Toggl > JIRA Sync
 
+![Build](https://github.com/pmclain/toggl-jira/actions/workflows/jest.yml/badge.svg)
+
 Sync Toggl time entries into JIRA Work Logs.
 
 ### Setup
