@@ -100,7 +100,7 @@ class Jira {
         }
 
         const keyRegex = new RegExp(`((?:${supportedKeys.join("|")})-\\d+)`, "g");
-        const matches = time.description.match(keyRegex);
+        const matches = time.description?.match(keyRegex);
 
         return matches || [];
     }

@@ -5,6 +5,6 @@ export default interface TimeEntry {
     start: string;
     stop?: string;
     duration: number;
-    description: string;
+    description?: string;
     at: string;
 }

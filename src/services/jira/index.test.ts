@@ -101,6 +101,21 @@ describe("Test Jira Service", () => {
     expect(postData.timeSpentSeconds % 900).toBe(0)
   });
 
+  it("Should ignore time entry without description", async () => {
+    const timeEntryWithoutDescription: TimeEntry = {
+      "id": 1951596187,
+      "wid": 1391549,
+      "billable": false,
+      "start": "2021-04-01T12:26:22+00:00",
+      "stop": "2021-04-01T13:00:22+00:00",
+      "duration": 2040,
+      "at": "2021-04-01T13:04:51+00:00"
+    };
+
+    await Jira.addTimeToWorkLog(timeEntryWithoutDescription);
+    expect(mockAxios.history.get.length).toBe(0);
+  });
+
   it("Should ignore running time entries", async () => {
     const runningTimeEntry: TimeEntry = {
       "id": 1952399902,
