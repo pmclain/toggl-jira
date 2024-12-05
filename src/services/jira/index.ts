@@ -1,7 +1,7 @@
-import axios, {AxiosResponse} from "axios";
-import TimeEntry from "../toggle/data/time-entry";
-import WorkLog from "./data/work-log";
-import moment from "moment";
+import axios, {AxiosResponse, AxiosError} from "axios";
+import TimeEntry from "../toggle/data/time-entry.js";
+import WorkLog from "./data/work-log.js";
+import { DateTime } from "luxon";
 
 class Jira {
     private static auth() {
@@ -38,6 +38,15 @@ class Jira {
             } catch (e) {
                 // TODO add an actual logger
                 console.error(`${issueKey}: Unable to load issue`);
+                const error = e as AxiosError;
+                if (error.response) {
+                    console.error('Error Status:', error.response.status);
+                    console.error('Error Data:', JSON.stringify(error.response.data, null, 2));
+                } else if (error.request) {
+                    console.error('Error Request:', error.request);
+                } else {
+                    console.error('Error:', error.message);
+                }
             }
         }
     }
@@ -50,11 +59,14 @@ class Jira {
 
         console.log(`${time.description}: updating existing worklog`);
 
+        const seconds = Jira.roundUp(time.duration);
+        const minutes = Math.ceil(seconds / 60);
+
         await axios.put(
             `${Jira.jiraBaseUri()}/rest/api/latest/issue/${issueKey}/worklog/${workLog.id}?notifyUsers=false`,
             {
                 comment: `TogglID: ${String(time.id)} ${time.description}`,
-                timeSpentSeconds: Jira.roundUp(time.duration),
+                timeSpent: `${minutes}m`,
                 started: Jira.formatDateTime(time.start)
             },
             {
@@ -65,14 +77,21 @@ class Jira {
 
     private static async createWorkLog(issueKey: string, time: TimeEntry): Promise<void> {
         console.log(`${time.description}: creating worklog`);
-
+        
+        const seconds = Jira.roundUp(time.duration);
+        const minutes = Math.ceil(seconds / 60);
+        
+        const worklogData = {
+            comment: `TogglID: ${String(time.id)} ${time.description}`,
+            timeSpent: `${minutes}m`,
+            started: Jira.formatDateTime(time.start)
+        };
+        
+        console.log('Sending worklog data:', JSON.stringify(worklogData, null, 2));
+        
         await axios.post(
             `${Jira.jiraBaseUri()}/rest/api/latest/issue/${issueKey}/worklog?notifyUsers=false`,
-            {
-                comment: `TogglID: ${String(time.id)} ${time.description}`,
-                timeSpentSeconds: Jira.roundUp(time.duration),
-                started: Jira.formatDateTime(time.start)
-            },
+            worklogData,
             {
                 auth: Jira.auth()
             }
@@ -80,12 +99,15 @@ class Jira {
     }
 
     private static roundUp(duration: number): number {
-        const roundUpToNext = 900;
+        const roundUpToNext = parseInt(process.env.JIRA_TIME_ROUNDING_SECONDS || "0", 10);
+        if (roundUpToNext <= 0) {
+            return duration;
+        }
         return duration + (roundUpToNext - (duration % roundUpToNext));
     }
 
     private static formatDateTime(time: string): string {
-        return moment(time).format("YYYY-MM-DDTHH:mm:ss.SSSZZ");
+        return DateTime.fromISO(time).toFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
     }
 
     private static getSupportedJiraKeys(): string[] {

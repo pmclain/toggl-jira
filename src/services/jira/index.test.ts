@@ -98,7 +98,8 @@ describe("Test Jira Service", () => {
     await Jira.addTimeToWorkLog(timeEntry);
     const postData = JSON.parse(mockAxios.history.post[0].data);
     expect(postData.comment).toContain(`TogglID: ${timeEntry.id}`);
-    expect(postData.timeSpentSeconds % 900).toBe(0)
+    expect(parseInt(postData.timeSpent)).toBe(Math.ceil(timeEntry.duration / 60));
+    expect(postData.timeSpent.endsWith('m')).toBe(true);
   });
 
   it("Should ignore time entry without description", async () => {
@@ -146,7 +147,8 @@ describe("Test Jira Service", () => {
     expect(mockAxios.history.post.length).toBe(0);
     const putData = JSON.parse(mockAxios.history.put[0].data);
     expect(putData.comment).toContain(`TogglID: ${timeEntry.id}`);
-    expect(putData.timeSpentSeconds % 900).toBe(0)
+    expect(parseInt(putData.timeSpent)).toBe(Math.ceil(timeEntry.duration / 60));
+    expect(putData.timeSpent.endsWith('m')).toBe(true);
   });
 
   it("Should ignore unsupported project keys", async () => {

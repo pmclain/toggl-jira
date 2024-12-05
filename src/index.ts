@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import main from "./main";
+import main from "./main.js";
 
 dotenv.config();
 
