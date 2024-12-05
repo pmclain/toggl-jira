@@ -1,39 +1,127 @@
-# Toggl > JIRA Sync
+# Toggl-Jira Time Sync
 
-![Build](https://github.com/pmclain/toggl-jira/actions/workflows/jest.yml/badge.svg)
+A Go tool to sync Toggl time entries to Jira work logs. This version is distributed as a single binary with no dependencies.
 
-Sync Toggl time entries into JIRA Work Logs.
+## Features
 
-### Setup
+- Single binary distribution - no runtime dependencies
+- Cross-platform support (Linux, macOS, Intel, ARM)
+- Project filtering with `JIRA_PROJECTS` environment variable
+- Automatic worklog updates for existing entries
+- Detailed logging
+- Configurable time rounding
 
-* `yarn install`
-* `cp .env.sample .env`
+## Installation
 
-Add values for `.env` variables
+### Download Pre-built Binary
 
-| Variable | Description |
-| --- | --- |
-| `JIRA_TOKEN` | JIRA API Key [Atlassian Docs](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) |
-| `JIRA_USER` | The email or username of your JIRA account. |
-| `JIRA_PROJECTS` | Comma separated list of project keys to sync ie `PROJONE,PROJTWO`. Only issues from these projects will by synced. |
-| `JIRA_BASE_URI` | The base URI of your JIRA instance. |
-| `TOGGL_TOKEN` | Toggle API Key [Toggl Docs](https://github.com/toggl/toggl_api_docs#api-token) |
+Download the appropriate binary for your system from the [releases page](../../releases):
 
-### Usage
+- `toggl-jira-darwin-amd64` for macOS (Intel)
+- `toggl-jira-darwin-arm64` for macOS (Apple Silicon)
+- `toggl-jira-linux-amd64` for Linux (x86_64)
+- `toggl-jira-linux-arm64` for Linux (ARM64)
 
-`yarn sync-time`
+Make it executable:
+```bash
+chmod +x toggl-jira-*
+```
 
-* Pulls Toggl entries for the last 24hrs
-* Converts Toggl entries to JIRA work logs for `JIRA_PROJECTS` based on the
-  Toggle description ie `ISSUE-1 Taking care of business`
-* Rounds time entries up to next 15 minute increment.
-* Updates work log duration when JIRA ticket and Toggl ID match.
+### Build from Source
 
-### Known Limitation
+Requires Go 1.21 or later:
 
-* Time entries cannot be disassociated with tickets after sync. For example:
-  A time entry with a description `ISSUE-1 I did work` is synced to JIRA.
-  Changes to the duration will update the associated work log, but changes to
-  the ticket number will result in a new work log and the old work log will NOT
-  be deleted.
-* Time entries cannot apply to multiple tickets
+```bash
+git clone https://github.com/pmclain/toggl-jira
+cd toggl-jira
+go build
+```
+
+## Configuration
+
+Create a `.env` file with your credentials:
+```bash
+cp .env.sample .env
+```
+
+Edit the `.env` file:
+```
+TOGGL_API_TOKEN=your_toggl_token
+JIRA_EMAIL=your_email@company.com
+JIRA_API_TOKEN=your_jira_token
+JIRA_HOST=your.jira.host.com
+JIRA_PROJECTS=PROJ1,PROJ2  # Optional: comma-separated list of project keys
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `TOGGL_API_TOKEN` | Yes | Your Toggl API token |
+| `JIRA_EMAIL` | Yes | Your Jira account email |
+| `JIRA_API_TOKEN` | Yes | Your Jira API token |
+| `JIRA_HOST` | Yes | Your Jira instance hostname |
+| `JIRA_PROJECTS` | No | Comma-separated list of Jira project keys to sync |
+
+## Usage
+
+Simply run the binary:
+```bash
+./toggl-jira
+```
+
+The tool will:
+1. Fetch Toggl time entries from the last 48 hours
+2. Parse Jira ticket numbers from the Toggl entry descriptions
+3. Create or update work logs in Jira for each entry
+
+### Toggl Entry Format
+
+Your Toggl time entries should include the Jira issue key at the start of the description:
+
+```
+PROJ-123 Working on feature
+PROJ-456 Bug fix
+```
+
+If `JIRA_PROJECTS` is set, only entries matching those project keys will be synced.
+
+### Automation
+
+For Linux/macOS users, you can set up a cron job to run the sync automatically:
+
+```bash
+# Run every hour
+0 * * * * /path/to/toggl-jira
+```
+
+## Development
+
+### Running Tests
+
+```bash
+go test -v ./...
+```
+
+### Building for All Platforms
+
+```bash
+# Build for all supported platforms
+mkdir -p dist
+GOOS=darwin GOARCH=amd64 go build -o dist/toggl-jira-darwin-amd64
+GOOS=darwin GOARCH=arm64 go build -o dist/toggl-jira-darwin-arm64
+GOOS=linux GOARCH=amd64 go build -o dist/toggl-jira-linux-amd64
+GOOS=linux GOARCH=arm64 go build -o dist/toggl-jira-linux-arm64
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
